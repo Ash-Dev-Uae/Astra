@@ -1,3 +1,4 @@
+
 require("dotenv").config();
 
 const {
@@ -20,7 +21,7 @@ const commands = [
 
   new SlashCommandBuilder()
     .setName("help")
-    .setDescription("Show Astra's commands"),
+    .setDescription("Show Astra's command menu"),
 
   new SlashCommandBuilder()
     .setName("serverinfo")
@@ -47,7 +48,7 @@ if (!token || !clientId) {
 }
 
 client.once("ready", async () => {
-  console.log(`Astra is online as ${client.user.tag}`);
+  console.log("Astra is online as " + client.user.tag);
 
   try {
     const rest = new REST({ version: "10" }).setToken(token);
@@ -57,14 +58,12 @@ client.once("ready", async () => {
         Routes.applicationGuildCommands(clientId, guildId),
         { body: commands }
       );
-
       console.log("Guild commands registered!");
     } else {
       await rest.put(
         Routes.applicationCommands(clientId),
         { body: commands }
       );
-
       console.log("Global commands registered!");
     }
   } catch (error) {
@@ -76,97 +75,133 @@ client.on("interactionCreate", async interaction => {
   if (!interaction.isChatInputCommand()) return;
 
   try {
-    if (interaction.commandName === "ping") {
-      const embed = new EmbedBuilder()
-        .setColor(0x8B5CF6)
-        .setTitle("🏓 Pong!")
-        .setDescription(`Latency: **${client.ws.ping}ms**`)
-        .setFooter({ text: "Astra" });
+    switch (interaction.commandName) {
+      case "ping": {
+        const embed = new EmbedBuilder()
+          .setColor(0x8B5CF6)
+          .setTitle("🏓 Pong!")
+          .setDescription("Latency: **" + client.ws.ping + "ms**")
+          .setFooter({ text: "Astra • General" });
 
-      return interaction.reply({ embeds: [embed] });
-    }
-
-    if (interaction.commandName === "help") {
-      const embed = new EmbedBuilder()
-        .setColor(0x8B5CF6)
-        .setTitle("Astra Commands")
-        .setDescription("Here are my available commands:")
-        .addFields(
-          { name: "/ping", value: "Check my latency.", inline: true },
-          { name: "/help", value: "Show this menu.", inline: true },
-          { name: "/serverinfo", value: "View server information.", inline: true },
-          { name: "/userinfo", value: "View user information.", inline: true }
-        )
-        .setFooter({ text: "More commands coming soon!" });
-
-      return interaction.reply({ embeds: [embed] });
-    }
-
-    if (interaction.commandName === "serverinfo") {
-      const guild = interaction.guild;
-
-      if (!guild) {
-        return interaction.reply({
-          content: "This command can only be used in a server.",
-          ephemeral: true
-        });
+        return interaction.reply({ embeds: [embed] });
       }
 
-      const embed = new EmbedBuilder()
-        .setColor(0x8B5CF6)
-        .setTitle(guild.name)
-        .setThumbnail(guild.iconURL())
-        .addFields(
-          { name: "Server ID", value: guild.id, inline: true },
-          { name: "Members", value: `${guild.memberCount}`, inline: true },
-          {
-            name: "Created",
-            value: `<t:${Math.floor(guild.createdTimestamp / 1000)}:D>`,
-            inline: true
-          }
-        )
-        .setFooter({ text: "Astra Server Info" });
+      case "help": {
+        const embed = new EmbedBuilder()
+          .setColor(0x8B5CF6)
+          .setAuthor({
+            name: "Astra • Command Centre",
+            iconURL: client.user.displayAvatarURL()
+          })
+          .setTitle("Help & Commands")
+          .setDescription(
+            "Here are the commands currently available in Astra. More features are being added!"
+          )
+          .addFields(
+            {
+              name: "🌐 General",
+              value: [
+                "`/ping` — Check Astra's response time",
+                "`/help` — Open this command menu"
+              ].join("\n"),
+              inline: false
+            },
+            {
+              name: "🛡️ Server",
+              value: "`/serverinfo` — View this server's information",
+              inline: false
+            },
+            {
+              name: "👤 User",
+              value: "`/userinfo [user]` — View your information or another user's",
+              inline: false
+            },
+            {
+              name: "🚧 Coming soon",
+              value: "Moderation • Tickets • Staff tools • Logging",
+              inline: false
+            }
+          )
+          .setThumbnail(client.user.displayAvatarURL())
+          .setFooter({
+            text: "Astra • Built to make server management easier"
+          });
 
-      return interaction.reply({ embeds: [embed] });
-    }
+        return interaction.reply({ embeds: [embed] });
+      }
 
-    if (interaction.commandName === "userinfo") {
-      const user =
-        interaction.options.getUser("user") || interaction.user;
+      case "serverinfo": {
+        const guild = interaction.guild;
 
-      const member = interaction.guild
-        ? await interaction.guild.members.fetch(user.id).catch(() => null)
-        : null;
+        if (!guild) {
+          return interaction.reply({
+            content: "This command can only be used in a server.",
+            ephemeral: true
+          });
+        }
 
-      const embed = new EmbedBuilder()
-        .setColor(0x8B5CF6)
-        .setTitle(`User Information: ${user.username}`)
-        .setThumbnail(user.displayAvatarURL())
-        .addFields(
-          { name: "Username", value: user.username, inline: true },
-          { name: "User ID", value: user.id, inline: true },
-          {
-            name: "Account Created",
-            value: `<t:${Math.floor(user.createdTimestamp / 1000)}:D>`,
-            inline: true
-          },
-          {
-            name: "Joined Server",
-            value: member
-              ? `<t:${Math.floor(member.joinedTimestamp / 1000)}:D>`
-              : "Not available",
-            inline: true
-          }
-        )
-        .setFooter({ text: "Astra User Info" });
+        const embed = new EmbedBuilder()
+          .setColor(0x8B5CF6)
+          .setTitle(guild.name)
+          .setThumbnail(guild.iconURL())
+          .addFields(
+            { name: "Server ID", value: guild.id, inline: true },
+            { name: "Members", value: String(guild.memberCount), inline: true },
+            {
+              name: "Created",
+              value: "<t:" + Math.floor(guild.createdTimestamp / 1000) + ":D>",
+              inline: true
+            }
+          )
+          .setFooter({ text: "Astra • Server Information" });
 
-      return interaction.reply({ embeds: [embed] });
+        return interaction.reply({ embeds: [embed] });
+      }
+
+      case "userinfo": {
+        const user =
+          interaction.options.getUser("user") || interaction.user;
+
+        const member = interaction.guild
+          ? await interaction.guild.members.fetch(user.id).catch(() => null)
+          : null;
+
+        const embed = new EmbedBuilder()
+          .setColor(0x8B5CF6)
+          .setTitle("User Information: " + user.username)
+          .setThumbnail(user.displayAvatarURL())
+          .addFields(
+            { name: "Username", value: user.username, inline: true },
+            { name: "User ID", value: user.id, inline: true },
+            {
+              name: "Account Created",
+              value: "<t:" + Math.floor(user.createdTimestamp / 1000) + ":D>",
+              inline: true
+            },
+            {
+              name: "Joined Server",
+              value: member
+                ? "<t:" + Math.floor(member.joinedTimestamp / 1000) + ":D>"
+                : "Not available",
+              inline: true
+            }
+          )
+          .setFooter({ text: "Astra • User Information" });
+
+        return interaction.reply({ embeds: [embed] });
+      }
+
+      default:
+        return interaction.reply({
+          content: "I don't recognize that command yet. Try /help.",
+          ephemeral: true
+        });
     }
   } catch (error) {
-    console.error(error);
+    console.error("Command error:", error);
 
     const response = {
-      content: "Something went wrong executing this command.",
+      content: "Something went wrong while running this command.",
       ephemeral: true
     };
 
